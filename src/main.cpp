@@ -1,3 +1,4 @@
+#include "heaponly/SpamFilter.h"
 #include "interface/SpamFilter.h"
 #include "pimpl/SpamFilter.h"
 #include "priv/SpamFilter.h"
@@ -28,6 +29,21 @@ void bench()
         printf ("Bug!\n");
 }
 
+void benchHeapOnly()
+{
+    std::set<std::string> badWords;
+    badWords.insert ("popcorn");
+    badWords.insert ("cookies");
+    int r = 0;
+    for (int i = 0; i < 1000000; ++i)
+    {
+        const auto filter = heaponly::SpamFilter::make (badWords);
+        r += filter->isSpam ({"commercial", "for", "popcorn"}) ? 1 : 0;
+    }
+    if (r < 1)
+        printf ("Bug!\n");
+}
+
 int main (int argc, const char** argv)
 {
     if (argc != 2)
@@ -37,7 +53,9 @@ int main (int argc, const char** argv)
     }
 
     const char* mode = argv[1];
-    if (0 == strcmp (mode, "simple"))
+    if (0 == strcmp (mode, "heaponly"))
+        benchHeapOnly();
+    else if (0 == strcmp (mode, "simple"))
         bench<simple::SpamFilter, simple::SpamFilter>();
     else if (0 == strcmp (mode, "interface"))
         bench<interface::SpamFilter, interface::AbstractSpamFilter>();
