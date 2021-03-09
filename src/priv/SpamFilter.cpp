@@ -1,18 +1,15 @@
 #include "SpamFilter.h"
 
-#include "../priv.h"
-
 using namespace prividiom;
 
-class SpamFilter::Priv : public SpamFilter
+struct SpamFilter::Priv
 {
-public:
-    bool isSpam (const std::string& word) const;
+    static bool isSpam (const SpamFilter&, const std::string& word);
 };
 
-bool SpamFilter::Priv::isSpam (const std::string& s) const
+bool SpamFilter::Priv::isSpam (const SpamFilter& self, const std::string& s)
 {
-    return m_forbiddenWords.find (s) != m_forbiddenWords.end();
+    return self.m_forbiddenWords.find (s) != self.m_forbiddenWords.end();
 }
 
 SpamFilter::SpamFilter (const std::set<std::string>& forbiddenWords) : m_forbiddenWords (forbiddenWords) {}
@@ -20,7 +17,7 @@ SpamFilter::SpamFilter (const std::set<std::string>& forbiddenWords) : m_forbidd
 bool SpamFilter::isSpam (const std::vector<std::string>& words) const
 {
     for (const auto& x : words)
-        if (priv.isSpam (x))
+        if (Priv::isSpam (*this, x))
             return true;
     return false;
 }
