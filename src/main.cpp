@@ -14,6 +14,20 @@ bool benchCheck (const Interface& filter)
 }
 
 template <typename Concrete, typename Interface>
+int benchIter (const std::set<std::string>& badWords)
+{
+    const Concrete filter (badWords);
+    return benchCheck<Interface> (filter) ? 1 : 0;
+}
+
+template <>
+int benchIter<std::unique_ptr<heaponly::SpamFilter>, heaponly::SpamFilter> (const std::set<std::string>& badWords)
+{
+    auto filter = heaponly::SpamFilter::make (badWords);
+    return benchCheck<heaponly::SpamFilter> (*filter) ? 1 : 0;
+}
+
+template <typename Concrete, typename Interface>
 void bench()
 {
     std::set<std::string> badWords;
@@ -21,25 +35,7 @@ void bench()
     badWords.insert ("cookies");
     int r = 0;
     for (int i = 0; i < 1000000; ++i)
-    {
-        const Concrete filter (badWords);
-        r += benchCheck<Interface> (filter) ? 1 : 0;
-    }
-    if (r < 1)
-        printf ("Bug!\n");
-}
-
-void benchHeapOnly()
-{
-    std::set<std::string> badWords;
-    badWords.insert ("popcorn");
-    badWords.insert ("cookies");
-    int r = 0;
-    for (int i = 0; i < 1000000; ++i)
-    {
-        const auto filter = heaponly::SpamFilter::make (badWords);
-        r += filter->isSpam ({"commercial", "for", "popcorn"}) ? 1 : 0;
-    }
+        r += benchIter<Concrete, Interface> (badWords);
     if (r < 1)
         printf ("Bug!\n");
 }
@@ -54,7 +50,7 @@ int main (int argc, const char** argv)
 
     const char* mode = argv[1];
     if (0 == strcmp (mode, "heaponly"))
-        benchHeapOnly();
+        bench<std::unique_ptr<heaponly::SpamFilter>, heaponly::SpamFilter>();
     else if (0 == strcmp (mode, "simple"))
         bench<simple::SpamFilter, simple::SpamFilter>();
     else if (0 == strcmp (mode, "interface"))
